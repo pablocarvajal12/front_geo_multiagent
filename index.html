@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoMultiAgent 3D - CesiumJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">&#9678;</div>
+    <div class="logo-text">Geo<span>MultiAgent 3D</span></div>
+  </div>
+  <div class="badge">VIU - TFM Pablo</div>
+</header>
+<main>
+  <div class="left-panel">
+    <div class="query-section">
+      <h2>Consulta en lenguaje natural</h2>
+      <div class="examples">
+        <button class="example-chip" data-query="Analiza el estado de la vegetacion en la Comunidad de Madrid durante el verano de 2024">Vegetacion Madrid</button>
+        <button class="example-chip" data-query="Busca inundaciones severas y delimita las zonas afectadas en Valencia">Inundaciones Valencia</button>
+        <button class="example-chip" data-query="Detecta focos de incendios activos e historicos en las Islas Canarias">Incendios Canarias</button>
+      </div>
+      <textarea id="query-input" placeholder="Ej: Analiza el estado de la vegetacion en Madrid en verano 2024"></textarea>
+      <button class="btn-run" id="btn-run">
+        <span id="btn-spinner" class="spinner"></span>
+        <span id="btn-text">&#9654; Ejecutar analisis</span>
+      </button>
+    </div>
+    <div class="timeline-section">
+      <h2>Pipeline de agentes</h2>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot" id="dot-planner"></div>
+          <div class="tl-body">
+            <div class="tl-agent">Agente Planificador</div>
+            <div class="tl-text" id="txt-planner">En espera...</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" id="dot-data_acquisition"></div>
+          <div class="tl-body">
+            <div class="tl-agent">Agente Adquisicion</div>
+            <div class="tl-text" id="txt-data_acquisition">En espera...</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" id="dot-analyst"></div>
+          <div class="tl-body">
+            <div class="tl-agent">Agente Analista</div>
+            <div class="tl-text" id="txt-analyst">En espera...</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" id="dot-reporter"></div>
+          <div class="tl-body">
+            <div class="tl-agent">Agente Informe</div>
+            <div class="tl-text" id="txt-reporter">En espera...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="report">Informe Tecnico</button>
+      <button class="tab" data-tab="data">Datos del Analisis</button>
+      <button class="tab" data-tab="code">Codigo Python</button>
+      <button class="tab" data-tab="map">Visor 3D (CesiumJS)</button>
+    </div>
+    <div class="tab-content active" id="tab-report">
+      <div id="report-content" class="markdown">Introduce una consulta y ejecuta el pipeline.</div>
+    </div>
+    <div class="tab-content" id="tab-data">
+      <div id="data-content" class="markdown">Introduce una consulta y ejecuta el pipeline.</div>
+    </div>
+    <div class="tab-content" id="tab-code">
+      <div id="code-content" class="markdown">Introduce una consulta y ejecuta el pipeline.</div>
+    </div>
+    <div class="tab-content" id="tab-map">
+      <div id="cesiumContainer"></div>
+    </div>
+  </div>
+</main>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
