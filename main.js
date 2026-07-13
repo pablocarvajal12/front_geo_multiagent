@@ -13,6 +13,8 @@ import {
   GeoJsonDataSource,
   Math as CesiumMath,
   UrlTemplateImageryProvider,
+  BoundingSphere,
+  HeadingPitchRange,
 } from "cesium";
 
 // ---------------------------------------------------------------------------
@@ -77,6 +79,63 @@ function clearAnalysisLayers() {
   }
   viewer.entities.removeAll();
   viewer.dataSources.removeAll();
+  clearLegend();
+}
+
+/** Vacia y oculta la leyenda del mapa. */
+function clearLegend() {
+  var el = document.getElementById("map-legend");
+  if (!el) return;
+  el.innerHTML = "";
+  el.classList.add("hidden");
+}
+
+/**
+ * Anade una entrada a la leyenda del mapa: checkbox para mostrar/ocultar la
+ * capa y, si la capa lleva leyenda de colores (overlays), sus swatches.
+ * @param {object} layerInfo     Metadatos de la capa recibidos del backend
+ * @param {object} imageryLayer  ImageryLayer de Cesium ya anadido al viewer
+ */
+function addLegendEntry(layerInfo, imageryLayer) {
+  var el = document.getElementById("map-legend");
+  if (!el) return;
+  el.classList.remove("hidden");
+
+  if (!el.querySelector(".legend-title")) {
+    var title = document.createElement("div");
+    title.className = "legend-title";
+    title.innerText = "Capas del analisis";
+    el.appendChild(title);
+  }
+
+  var row = document.createElement("label");
+  row.className = "legend-row";
+  var cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = imageryLayer.show;
+  cb.addEventListener("change", function() {
+    imageryLayer.show = cb.checked;
+    viewer.scene.requestRender();
+  });
+  row.appendChild(cb);
+  var name = document.createElement("span");
+  name.className = "legend-name";
+  name.innerText = layerInfo.name || layerInfo.id || "Capa";
+  row.appendChild(name);
+  el.appendChild(row);
+
+  (layerInfo.legend || []).forEach(function(item) {
+    var li = document.createElement("div");
+    li.className = "legend-item";
+    var sw = document.createElement("span");
+    sw.className = "legend-swatch";
+    sw.style.background = item.color;
+    li.appendChild(sw);
+    var lb = document.createElement("span");
+    lb.innerText = item.label;
+    li.appendChild(lb);
+    el.appendChild(li);
+  });
 }
 
 /**
@@ -124,13 +183,17 @@ function addIndexLayer(url, bbox, opacity) {
  */
 function flyToBbox(bbox) {
   const [w, s, e, n] = bbox;
-  viewer.camera.flyTo({
-    destination: Rectangle.fromDegrees(w, s, e, n),
-    orientation: {
-      heading: CesiumMath.toRadians(0),
-      pitch:   CesiumMath.toRadians(-40),
-      roll: 0,
-    },
+  // flyToBoundingSphere orbita alrededor del centro del area, de modo que el
+  // punto de mira de la camara es siempre el centro del bbox aunque la vista
+  // este inclinada (con flyTo + Rectangle + pitch, el area quedaba descentrada).
+  const sphere = BoundingSphere.fromRectangle3D(Rectangle.fromDegrees(w, s, e, n));
+  sphere.radius *= 1.2; // margen alrededor del area
+  viewer.camera.flyToBoundingSphere(sphere, {
+    offset: new HeadingPitchRange(
+      CesiumMath.toRadians(0),
+      CesiumMath.toRadians(-40),
+      0 // 0 → Cesium calcula la distancia justa para encuadrar todo el area
+    ),
     duration: 2.5,
   });
 }
@@ -372,13 +435,26 @@ window.runQuery = async function() {
 
         if (cesium.layers && cesium.layers.length && cesium.bbox) {
           console.log("[Cesium] Capas a renderizar:", cesium.layers.length);
+          // Si hay overlays de zonas afectadas, los rasters de indices se
+          // anaden ocultos por defecto (activables desde la leyenda) para no
+          // tapar las zonas marcadas.
+          var hasOverlays = cesium.layers.some(function(l) { return l.type === "overlay"; });
           cesium.layers.forEach(function(layer, i) {
-            if (layer.type === "imagery_url" && layer.url) {
-              setTimeout(function() {
-                addIndexLayer(API_BASE + layer.url, cesium.bbox, 0.75);
-                console.log("[Cesium] Capa añadida:", layer.url);
-              }, i * 300);
-            }
+            if (!layer.url) return;
+            var isOverlay = layer.type === "overlay";
+            if (!isOverlay && layer.type !== "imagery_url") return;
+            // Bounds reales del raster si el backend los conoce; si no, bbox del plan
+            var rect = (layer.bounds && layer.bounds.length === 4) ? layer.bounds : cesium.bbox;
+            setTimeout(function() {
+              // Los overlays llevan transparencia por pixel en el propio PNG.
+              // El backend puede marcar una capa como oculta por defecto
+              // (p.ej. "todas las zonas de agua" cuando ya hay capa de agua
+              // nueva); se activa desde la leyenda.
+              var imagery = addIndexLayer(API_BASE + layer.url, rect, isOverlay ? 1.0 : 0.75);
+              imagery.show = isOverlay ? layer.visible !== false : !hasOverlays;
+              addLegendEntry(layer, imagery);
+              console.log("[Cesium] Capa añadida:", layer.url);
+            }, i * 300);
           });
         } else {
           console.warn("[Cesium] Sin capas de imagenes. layers:", cesium.layers);
