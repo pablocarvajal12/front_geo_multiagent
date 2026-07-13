@@ -4,7 +4,6 @@
  */
 
 import {
-  Ion,
   Viewer,
   Cartesian3,
   Rectangle,
@@ -18,11 +17,10 @@ import {
 } from "cesium";
 
 // ---------------------------------------------------------------------------
-// 1. Viewer - sin Ion token, sin Bing Maps, sin baseLayerPicker
+// 1. Viewer - sin Cesium Ion ni Bing Maps; la capa base es OpenStreetMap
 // ---------------------------------------------------------------------------
-Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsFInR5cCI6IkpXVCJ9.eyJqdGkiOiIyN2M3MmJhYy00ZmNiLTQ0MmEtOTljZC05YWIyMjU2YTJjYTEiLCJpZCI6NDQ2MjI4LCJzdWIiOiJwYWJsb2NydjEyIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6InRkbSIsImlhdCI6MTc4MTc4ODYxNX0.iFW45Ta2JR6nNJlH8qK-wxq_2IiZQaT9D_oEmgn6jpg";
 const viewer = new Viewer("cesiumContainer", {
-  // Quita el imageryProvider personalizado — Ion lo gestiona automaticamente
+  baseLayer: false, // sin capa Ion por defecto: OSM se anade justo debajo
   baseLayerPicker: false,
   animation: false,
   timeline: false,
@@ -36,8 +34,7 @@ const viewer = new Viewer("cesiumContainer", {
   creditContainer: document.createElement("div"),
 });
 
-// Eliminar capa Ion por defecto y usar OSM como capa base (indice 0)
-viewer.imageryLayers.removeAll();
+// Capa base OSM (indice 0; las capas de analisis se apilan encima)
 viewer.imageryLayers.addImageryProvider(
   new UrlTemplateImageryProvider({
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
